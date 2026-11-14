@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import MayaWorkspace from "@/components/maya-workspace";
-
-export default function Home() {
-  return <MayaWorkspace />;
-=======
 'use client';
 
 import React from 'react';
@@ -157,5 +151,4 @@ export default function LandingPage() {
       </footer>
     </div>
   );
->>>>>>> 174cbaa (all)
 }
