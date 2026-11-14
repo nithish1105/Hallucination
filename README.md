@@ -176,4 +176,4 @@ By integrating Retrieval-Augmented Generation (RAG), DeBERTa/RoBERTa verificatio
 confidence estimation, the application helps users receive more reliable and explainable responses.
 This makes the system suitable for real-world applications where factual accuracy is essential, such
 as education, healthcare, finance, legal services, and enterprise knowledge management.
-— End of Project Design Report 
+— End of Project Design Report
