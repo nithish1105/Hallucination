@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+<<<<<<< HEAD
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
 html, body { min-height: 100%; margin: 0; }
@@ -239,4 +240,276 @@ kbd { margin-left: auto; border: 1px solid var(--border); border-radius: 4px; pa
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+=======
+/* ─────────────────────────────────────────────────────────────
+   Tailwind v4 Theme Tokens — ChatGPT White Interface Design
+───────────────────────────────────────────────────────────── */
+@theme {
+  /* ChatGPT Light Color Palette */
+  --color-dark: #F9F9F9;
+  --color-surface: #F4F4F4;
+  --color-accent: #10A37F;
+  --color-accent-hover: #0D8C6D;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-maya-text: #0D0D0D;
+  --color-muted: #676767;
+  --color-border: #E5E5E5;
+  --color-border-light: #F0F0F0;
+
+  /* Fonts */
+  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  --font-outfit: "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Animations */
+  --animate-fade-in: fadeIn 0.4s ease-in-out;
+  --animate-slide-up: slideUp 0.4s ease-out;
+  --animate-pulse-glow: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-blink: blink 1s step-end infinite;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .6; }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CSS Custom Properties (ChatGPT Light Mode Default)
+───────────────────────────────────────────────────────────── */
+:root {
+  --background: #FFFFFF;
+  --foreground: #0D0D0D;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Base Reset
+───────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: #FFFFFF;
+  color: #0D0D0D;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Custom Scrollbar (Subtle ChatGPT style)
+───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9D9D9;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B4B4B4;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Typing Cursor
+───────────────────────────────────────────────────────────── */
+.typing-cursor::after {
+  content: '●';
+  display: inline-block;
+  color: #0D0D0D;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ChatGPT Card & Input Container Styles
+───────────────────────────────────────────────────────────── */
+.chatgpt-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+}
+
+.chatgpt-input-box {
+  background: #F4F4F4;
+  border: 1px solid #E5E5E5;
+  border-radius: 24px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.chatgpt-input-box:focus-within {
+  background: #FFFFFF;
+  border-color: #B4B4B4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Gradient Text Utility
+───────────────────────────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #0D0D0D, #404040);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Markdown / Prose Styles (Light mode optimized)
+───────────────────────────────────────────────────────────── */
+.prose {
+  color: #0D0D0D;
+  line-height: 1.75;
+  max-width: none;
+}
+.prose p {
+  margin-bottom: 1rem;
+}
+.prose h1, .prose h2, .prose h3,
+.prose h4, .prose h5, .prose h6 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  color: #0D0D0D;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.prose h1 { font-size: 1.4rem; }
+.prose h2 { font-size: 1.25rem; }
+.prose h3 { font-size: 1.1rem; }
+
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+.prose li {
+  margin-bottom: 0.35rem;
+}
+.prose a {
+  color: #2563EB;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose a:hover {
+  color: #1D4ED8;
+}
+.prose strong {
+  color: #0D0D0D;
+  font-weight: 600;
+}
+.prose em {
+  font-style: italic;
+}
+.prose blockquote {
+  border-left: 3px solid #0D0D0D;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  color: #404040;
+  background: #F8F9FA;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+}
+
+/* Code blocks */
+.prose pre {
+  background: #1E1E1E;
+  color: #F8F9FA;
+  border-radius: 12px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+}
+.prose code {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  background: #F3F4F6;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.875em;
+  color: #1F2937;
+  border: 1px solid #E5E7EB;
+}
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: #F8F9FA;
+}
+
+/* Tables */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.prose th,
+.prose td {
+  border: 1px solid #E5E5E5;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+.prose th {
+  background: #F9F9F9;
+  font-weight: 600;
+  color: #0D0D0D;
+}
+.prose td {
+  color: #262626;
+}
+.prose tr:hover td {
+  background: #F5F5F5;
+}
+
+/* Horizontal rule */
+.prose hr {
+  border: none;
+  border-top: 1px solid #E5E5E5;
+  margin: 1.5rem 0;
+}
+
+/* Images in markdown */
+.prose img {
+  border-radius: 12px;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Focus ring utility
+───────────────────────────────────────────────────────────── */
+.focus-ring:focus {
+  outline: 2px solid #0D0D0D;
+  outline-offset: 2px;
+}
+
+* {
+  box-sizing: border-box;
+>>>>>>> 174cbaa (all)
 }
