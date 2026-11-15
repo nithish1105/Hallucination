@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, MessageSquare, MoreHorizontal, Settings, LogOut, Pin, Search, PanelLeftClose } from 'lucide-react';
+import { Plus, MessageSquare, MoreHorizontal, Settings, LogOut, Pin, Search, PanelLeftClose, FileText, BarChart3 } from 'lucide-react';
 import { Chat } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -39,6 +39,16 @@ export function Sidebar({ isOpen, onClose, chats, activeChatId }: SidebarProps) 
 
   const handleSettings = () => {
     router.push('/settings');
+    onClose();
+  };
+
+  const handleDocuments = () => {
+    router.push('/documents');
+    onClose();
+  };
+
+  const handleAnalytics = () => {
+    router.push('/analytics');
     onClose();
   };
 
@@ -96,6 +106,26 @@ export function Sidebar({ isOpen, onClose, chats, activeChatId }: SidebarProps) 
               <Plus className="w-4 h-4 text-[#0d0d0d]" />
               <span>New chat</span>
             </div>
+          </button>
+        </div>
+
+        <div className="px-3 pb-2">
+          <button
+            onClick={handleDocuments}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-[#404040] hover:text-[#0d0d0d] hover:bg-[#ececec] rounded-xl transition-colors font-medium text-sm"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Uploaded documents</span>
+          </button>
+        </div>
+
+        <div className="px-3 pb-2">
+          <button
+            onClick={handleAnalytics}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-[#404040] hover:text-[#0d0d0d] hover:bg-[#ececec] rounded-xl transition-colors font-medium text-sm"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Analytics</span>
           </button>
         </div>
 

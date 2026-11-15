@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Mail, MessageSquare, Clock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safeToast';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });

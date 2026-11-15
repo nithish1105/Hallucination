@@ -5,9 +5,18 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, MessageSquare, Trash2, Calendar, MessageCircleOff } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
-import { chatApi } from '@/lib/api';
-import { toast } from 'sonner';
+import { chatApi, getApiErrorMessage } from '@/lib/api';
+import { toast } from '@/lib/safeToast';
 import { formatDate } from '@/lib/utils';
+import type { Chat } from '@/types';
+
+type ChatDateFields = Chat & { created_at?: string; updated_at?: string };
+
+function getUpdatedTime(chat: Chat): number {
+  const fields = chat as ChatDateFields;
+  const value = fields.updatedAt || fields.updated_at || fields.createdAt || fields.created_at;
+  return value ? new Date(value).getTime() : 0;
+}
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -22,8 +31,8 @@ export default function HistoryPage() {
       try {
         const res = await chatApi.getChats();
         setChats(res.data || []);
-      } catch (err) {
-        // silently fail
+      } catch (error: unknown) {
+        toast.error(getApiErrorMessage(error, 'Could not load chat history.'));
       } finally {
         setIsLoading(false);
       }
@@ -34,8 +43,8 @@ export default function HistoryPage() {
   const filteredChats = [...chats]
     .filter(c => c.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      const dateA = new Date(a.updatedAt || (a as any).updated_at || a.createdAt || (a as any).created_at || 0).getTime();
-      const dateB = new Date(b.updatedAt || (b as any).updated_at || b.createdAt || (b as any).created_at || 0).getTime();
+      const dateA = getUpdatedTime(a);
+      const dateB = getUpdatedTime(b);
       if (sort === 'newest') return dateB - dateA;
       if (sort === 'oldest') return dateA - dateB;
       return a.title.localeCompare(b.title);
@@ -48,8 +57,8 @@ export default function HistoryPage() {
         await chatApi.deleteChat(id);
         setChats(chats.filter(c => c.id !== id));
         toast.success('Chat deleted');
-      } catch (err) {
-        toast.error('Failed to delete chat');
+      } catch (error: unknown) {
+        toast.error(getApiErrorMessage(error, 'Failed to delete chat.'));
       }
     }
   };
@@ -72,7 +81,10 @@ export default function HistoryPage() {
           </div>
           <select 
             value={sort}
-            onChange={(e) => setSort(e.target.value as any)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'newest' || value === 'oldest' || value === 'title') setSort(value);
+            }}
             className="bg-[#f4f4f4] border border-[#e5e5e5] rounded-xl px-3 py-2 text-xs font-medium text-[#0d0d0d] focus:outline-none focus:bg-white focus:border-[#b4b4b4]"
           >
             <option value="newest">Newest first</option>
@@ -87,16 +99,20 @@ export default function HistoryPage() {
           <div className="w-14 h-14 bg-[#f4f4f4] rounded-full flex items-center justify-center mb-4 text-[#8e8e8e]">
             <MessageCircleOff className="w-7 h-7" />
           </div>
-          <h2 className="text-base font-semibold text-[#0d0d0d] mb-1">No chats found</h2>
-          <p className="text-[#8e8e8e] text-xs mb-6 max-w-sm">
-            {search ? 'Try adjusting your search terms.' : 'Start a new conversation with MAYA to see it here.'}
-          </p>
-          <button 
+          <h2 className="text-base font-semibold text-[#0d0d0d] mb-1">
+            {isLoading ? 'Loading chat history…' : 'No chats found'}
+          </h2>
+          {!isLoading && (
+            <p className="text-[#8e8e8e] text-xs mb-6 max-w-sm">
+              {search ? 'Try adjusting your search terms.' : 'Start a new conversation with MAYA to see it here.'}
+            </p>
+          )}
+          {!isLoading && <button
             onClick={() => router.push('/chat')}
             className="px-4 py-2 bg-[#0d0d0d] text-white rounded-full text-xs font-semibold hover:bg-[#262626] transition-colors"
           >
             New chat
-          </button>
+          </button>}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

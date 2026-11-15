@@ -2,9 +2,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Square, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safeToast';
 import { cn } from '@/lib/utils';
-import { voiceApi } from '@/lib/api';
+import { getApiErrorMessage, voiceApi } from '@/lib/api';
 
 interface VoiceRecorderProps {
   onTranscript: (text: string) => void;
@@ -26,40 +26,33 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
     typeof navigator.mediaDevices !== 'undefined' &&
     typeof navigator.mediaDevices.getUserMedia === 'function';
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      stopAllTracks();
-    };
-  }, []);
-
-  const stopAllTracks = () => {
+  const stopAllTracks = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      try { mediaRecorderRef.current.stop(); } catch (_) {}
+      try { mediaRecorderRef.current.stop(); } catch { /* The recorder may already be stopping. */ }
     }
-  };
+  }, []);
 
   const handleMicError = useCallback((err: unknown) => {
-    const error = err as DOMException;
-    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+    const errorName = err instanceof Error ? err.name : '';
+    if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
       setMicState('denied');
       toast.error('Microphone permission denied. Click the mic icon in your browser address bar to allow access.', {
         duration: 5000,
       });
-    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+    } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
       setMicState('unavailable');
       toast.error('No microphone found. Please connect a microphone and try again.');
-    } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+    } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
       setMicState('idle');
       toast.error('Microphone is already in use by another application.');
-    } else if (error.name === 'OverconstrainedError') {
+    } else if (errorName === 'OverconstrainedError') {
       setMicState('idle');
       toast.error('Microphone does not meet requirements. Try a different device.');
-    } else if (error.name === 'AbortError') {
+    } else if (errorName === 'AbortError') {
       setMicState('idle');
       // User dismissed the permission dialog — don't show an error toast, just reset silently
     } else {
@@ -67,6 +60,30 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
       toast.error('Could not access microphone. Please check your browser settings.');
     }
   }, []);
+
+  const handleTranscribe = useCallback(async (blob: Blob) => {
+    setMicState('processing');
+    try {
+      const res = await voiceApi.transcribe(blob);
+      if (res.data?.transcript) {
+        onTranscript(res.data.transcript);
+        toast.success('Voice transcribed successfully');
+      } else {
+        toast.error('Could not transcribe audio. Please try speaking more clearly.');
+      }
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, 'Voice transcription is not available right now. Please type your message.'));
+    } finally {
+      setMicState('idle');
+    }
+  }, [onTranscript]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      stopAllTracks();
+    };
+  }, [stopAllTracks]);
 
   const startRecording = useCallback(async () => {
     if (!isMicSupported) {
@@ -112,7 +129,7 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
     } catch (err) {
       handleMicError(err);
     }
-  }, [isMicSupported, micState, handleMicError]);
+  }, [isMicSupported, micState, handleMicError, handleTranscribe, stopAllTracks]);
 
   const stopRecording = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -121,24 +138,6 @@ export function VoiceRecorder({ onTranscript, disabled }: VoiceRecorderProps) {
     }
     setMicState('processing');
   }, []);
-
-  const handleTranscribe = async (blob: Blob) => {
-    setMicState('processing');
-    try {
-      const res = await voiceApi.transcribe(blob);
-      if (res.data?.transcript) {
-        onTranscript(res.data.transcript);
-        toast.success('Voice transcribed successfully');
-      } else {
-        toast.error('Could not transcribe audio. Please try speaking more clearly.');
-      }
-    } catch (err) {
-      // Voice transcription backend may not be configured — fail silently with friendly message
-      toast.error('Voice transcription is not available right now. Please type your message.');
-    } finally {
-      setMicState('idle');
-    }
-  };
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);

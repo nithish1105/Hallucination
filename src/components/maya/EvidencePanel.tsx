@@ -44,16 +44,25 @@ export function EvidencePanel({ evidence, defaultOpen = false }: EvidencePanelPr
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 bg-dark text-xs font-medium rounded text-muted border border-border">
-                        {item.source}
+                        {item.source || 'Source'}
+                        {item.page ? ` · page ${item.page}` : ''}
+                        {item.section ? ` · ${item.section}` : ''}
                       </span>
                       <div className="flex items-center gap-1">
+                        {(() => {
+                          const relevance = Math.max(0, Math.min(1, item.relevance_score ?? 0));
+                          return (
+                            <>
                         <div className="w-12 h-1 bg-dark rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-accent" 
-                            style={{ width: `${Math.round(item.relevanceScore * 100)}%` }}
+                                    style={{ width: `${Math.round(relevance * 100)}%` }}
                           />
                         </div>
-                        <span className="text-[10px] text-muted">{Math.round(item.relevanceScore * 100)}%</span>
+                                    <span className="text-[10px] text-muted">match {Math.round(relevance * 100)}%</span>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                     {item.url && (
@@ -62,8 +71,13 @@ export function EvidencePanel({ evidence, defaultOpen = false }: EvidencePanelPr
                       </a>
                     )}
                   </div>
+                  {item.nli_label && (
+                    <p className="text-[11px] text-muted mb-2">
+                      Evidence check: {item.nli_label.replaceAll('_', ' ')}
+                    </p>
+                  )}
                   <p className="text-xs text-muted leading-relaxed italic border-l-2 border-border pl-2">
-                    "{item.content}"
+                    “{item.content}”
                   </p>
                 </div>
               ))}

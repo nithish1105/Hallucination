@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safeToast';
 import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
@@ -104,7 +104,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-[#676767] mt-8">
-          Don't have an account? <Link href="/auth/signup" className="text-[#10a37f] font-semibold hover:underline">Sign up</Link>
+          Don&apos;t have an account? <Link href="/auth/signup" className="text-[#10a37f] font-semibold hover:underline">Sign up</Link>
         </p>
       </motion.div>
     </div>

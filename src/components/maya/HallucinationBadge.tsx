@@ -2,57 +2,52 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, ShieldCheck, Info, AlertTriangle, HelpCircle } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, HelpCircle, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface HallucinationBadgeProps {
-  status: 'verified' | 'high_confidence' | 'medium' | 'possible_hallucination' | 'unknown' | string;
+  status: 'supported' | 'contradicted' | 'conflicting' | 'not_verified' | string;
   confidence?: number;
   showScore?: boolean;
 }
 
 export function HallucinationBadge({ status, confidence, showScore = true }: HallucinationBadgeProps) {
-  const config: Record<string, { bg: string; text: string; border: string; icon: any; label: string }> = {
-    verified: {
+  const config: Record<string, { bg: string; text: string; border: string; icon: React.ElementType; label: string }> = {
+    supported: {
       bg: 'bg-emerald-50 text-emerald-700',
       text: 'text-emerald-700',
       border: 'border-emerald-200',
       icon: CheckCircle2,
-      label: 'No Hallucination'
+      label: 'Evidence supports claims'
     },
-    high_confidence: {
-      bg: 'bg-emerald-50 text-emerald-700',
-      text: 'text-emerald-700',
-      border: 'border-emerald-200',
-      icon: ShieldCheck,
-      label: 'No Hallucination'
-    },
-    medium: {
-      bg: 'bg-amber-50 text-amber-700',
-      text: 'text-amber-700',
-      border: 'border-amber-200',
-      icon: Info,
-      label: 'Medium Confidence'
-    },
-    possible_hallucination: {
+    contradicted: {
       bg: 'bg-red-50 text-red-700',
       text: 'text-red-700',
       border: 'border-red-200',
       icon: AlertTriangle,
-      label: 'Possible Hallucination'
+      label: 'Contradicted by evidence'
     },
-    unknown: {
+    conflicting: {
+      bg: 'bg-amber-50 text-amber-700',
+      text: 'text-amber-700',
+      border: 'border-amber-200',
+      icon: Scale,
+      label: 'Conflicting evidence'
+    },
+    not_verified: {
       bg: 'bg-gray-50 text-gray-700',
       text: 'text-gray-700',
       border: 'border-gray-200',
       icon: HelpCircle,
-      label: 'Unverified'
+      label: 'Not verified'
     },
   };
 
-  const current = config[status] || config.unknown;
+  const current = config[status] || config.not_verified;
   const Icon = current.icon;
-  const score = confidence !== undefined ? Math.round(confidence * 100) : null;
+  const score = typeof confidence === 'number' && Number.isFinite(confidence)
+    ? Math.round(Math.min(1, Math.max(0, confidence)) * 100)
+    : null;
 
   return (
     <motion.div
@@ -65,7 +60,7 @@ export function HallucinationBadge({ status, confidence, showScore = true }: Hal
     >
       <Icon className="w-3.5 h-3.5 flex-shrink-0" />
       <span>{current.label}</span>
-      {score !== null && (
+      {showScore && score !== null && (
         <span className="ml-1 opacity-90 font-bold">
           ({score}%)
         </span>

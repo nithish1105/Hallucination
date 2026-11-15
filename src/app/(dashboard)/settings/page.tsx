@@ -6,8 +6,8 @@ import * as Switch from '@radix-ui/react-switch';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTheme } from 'next-themes';
-import { Save, AlertTriangle, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { Save, AlertTriangle } from 'lucide-react';
+import { toast } from '@/lib/safeToast';
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuthStore();
@@ -15,8 +15,6 @@ export default function SettingsPage() {
   const { fontSize, setFontSize } = useSettingsStore();
   
   const [name, setName] = useState(user?.name || '');
-  const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
   
   const handleSaveProfile = () => {
@@ -105,10 +103,10 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-4">Font Size</h2>
               <div className="flex gap-3 bg-surface p-1 rounded-lg max-w-xs border border-border">
-                {['sm', 'md', 'lg'].map(s => (
+                {(['sm', 'md', 'lg'] as const).map(s => (
                   <button 
                     key={s}
-                    onClick={() => setFontSize(s as any)}
+                    onClick={() => setFontSize(s)}
                     className={`flex-1 py-1.5 text-sm font-medium uppercase rounded-md transition-colors ${fontSize === s ? 'bg-background shadow-sm text-foreground' : 'text-muted hover:text-foreground'}`}
                   >
                     {s}
@@ -143,28 +141,15 @@ export default function SettingsPage() {
 
           {/* API KEYS */}
           <Tabs.Content value="api-keys" className="space-y-6 animate-fadeIn">
-            <h2 className="text-lg font-semibold text-foreground mb-2">Custom API Keys</h2>
-            <p className="text-sm text-muted mb-6">Override the default MAYA services with your own API keys.</p>
-
-            <div className="space-y-1.5 max-w-md">
-              <label className="text-sm font-medium text-foreground">GROQ API Key (Optional)</label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input 
-                    type={showKey ? 'text' : 'password'} 
-                    value={apiKey} 
-                    onChange={e => setApiKey(e.target.value)}
-                    className="w-full bg-surface border border-border rounded-md pl-3 pr-10 py-2 text-sm focus:border-accent focus:outline-none font-mono" 
-                  />
-                  <button onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground">
-                    {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <button onClick={() => toast.success('Connection successful')} className="px-3 py-2 bg-surface border border-border text-foreground rounded-md text-sm hover:bg-surface/80">
-                  Test
-                </button>
-              </div>
-              <p className="text-xs text-muted mt-1">Used for Llama 3 fast inference. Leave blank to use MAYA defaults.</p>
+            <h2 className="text-lg font-semibold text-foreground mb-2">AI provider setup</h2>
+            <p className="text-sm text-muted mb-6">
+              Provider credentials are configured on the backend so API keys are not exposed or stored in this browser.
+            </p>
+            <div className="max-w-xl rounded-lg border border-border bg-surface/50 p-4">
+              <p className="text-sm font-medium text-foreground">Set a provider key</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Add <code>GROQ_API_KEY</code> or <code>OPENAI_API_KEY</code> to <code>backend/.env</code>, then restart the API. MAYA reads these keys server-side.
+              </p>
             </div>
           </Tabs.Content>
 
@@ -182,7 +167,7 @@ export default function SettingsPage() {
               </p>
               
               <div className="space-y-3">
-                <label className="text-xs font-medium text-foreground">Type "DELETE" to confirm</label>
+                <label className="text-xs font-medium text-foreground">Type &quot;DELETE&quot; to confirm</label>
                 <input 
                   type="text" 
                   value={deleteConfirm}

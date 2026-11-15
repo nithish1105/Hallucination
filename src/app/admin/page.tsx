@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Users, MessageSquare, AlertTriangle, TrendingUp, Crown, Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safeToast';
 
 export default function AdminPage() {
   const [articleTitle, setArticleTitle] = useState('');

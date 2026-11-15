@@ -1,23 +1,12 @@
 import { useState } from 'react';
-import { authApi } from '@/lib/api';
+import { authApi, getApiErrorMessage } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safeToast';
 
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login: storeLogin, logout: storeLogout } = useAuthStore();
-
-  /** Extract the most useful error message from an axios error */
-  const getErrorMessage = (err: any): string => {
-    // FastAPI returns errors as { detail: "..." }
-    return (
-      err.response?.data?.detail ||
-      err.response?.data?.message ||
-      err.message ||
-      'Something went wrong'
-    );
-  };
 
   const login = async (data: { email: string; password: string }) => {
     setIsLoading(true);
@@ -32,8 +21,8 @@ export function useAuth() {
       }
       toast.success('Welcome back!');
       return true;
-    } catch (err: any) {
-      const msg = getErrorMessage(err);
+    } catch (error: unknown) {
+      const msg = getApiErrorMessage(error);
       setError(msg);
       toast.error(msg);
       return false;
@@ -49,8 +38,8 @@ export function useAuth() {
       await authApi.signup(data);
       toast.success('Account created! You can now sign in.');
       return true;
-    } catch (err: any) {
-      const msg = getErrorMessage(err);
+    } catch (error: unknown) {
+      const msg = getApiErrorMessage(error);
       setError(msg);
       toast.error(msg);
       return false;

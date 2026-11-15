@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChatInput } from '@/components/chat/ChatInput';
 import {
   Shield, BookOpen, PenTool, Code, RefreshCw,
@@ -9,8 +9,8 @@ import {
   Sparkles, MessageSquare, Loader2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
-import { toast } from 'sonner';
+import api, { getApiErrorMessage, uploadApi } from '@/lib/api';
+import { toast } from '@/lib/safeToast';
 import { useDatasetSuggestions } from '@/hooks/useDatasetSuggestions';
 import type { ConversationThread } from '@/lib/huggingface';
 
@@ -74,20 +74,38 @@ function SuggestionCard({
 
 export default function NewChatPage() {
   const router = useRouter();
-  const { suggestions, loading, error, refresh } = useDatasetSuggestions(4);
+  const { suggestions, loading, refresh } = useDatasetSuggestions(4);
   const [refreshing, setRefreshing] = useState(false);
 
-  const handleSend = async (message: string, files: File[]) => {
+  const handleSend = async (message: string, files: File[], useDocuments = false): Promise<boolean> => {
+    if (!message.trim()) {
+      toast.error('Enter a question about the document or a message for MAYA.');
+      return false;
+    }
+    if (files.length > 0 && !useDocuments) {
+      toast.error('Turn on “Use uploaded documents” before sending attached files.');
+      return false;
+    }
     try {
+      if (files.length > 0) {
+        const uploaded = await uploadApi.uploadFiles(files);
+        toast.success(`${uploaded.length} document${uploaded.length === 1 ? '' : 's'} ready for this answer.`);
+      }
       const res = await api.post('/chat/create');
       const chatId = res.data.chat_id;
       if (!chatId) {
         toast.error('Failed to create chat session');
-        return;
+        return false;
       }
-      router.push(`/chat/${chatId}?initial=${encodeURIComponent(message)}`);
-    } catch (err) {
-      toast.error('Failed to start chat');
+      sessionStorage.setItem(`maya:chat-initial:${chatId}`, JSON.stringify({
+        content: message.trim(),
+        useDocuments,
+      }));
+      router.push(`/chat/${chatId}`);
+      return true;
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, 'Failed to upload the document or start chat.'));
+      return false;
     }
   };
 

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -25,13 +25,56 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, isStreaming, onRegenerate, onDelete }: ChatMessageProps) {
   const isUser = message.role === 'user';
-  const [isHovered, setIsHovered] = useState(false);
-  const [copiedCodeIdx, setCopiedCodeIdx] = useState<number | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const handleCopyCode = (code: string, idx: number) => {
+  const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    setCopiedCodeIdx(idx);
-    setTimeout(() => setCopiedCodeIdx(null), 2000);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const markdownComponents: Components = {
+    code({ className, children, ...props }) {
+      const match = /language-(\w+)/.exec(className || '');
+      const codeContent = String(children).replace(/\n$/, '');
+      const isBlock = match || codeContent.includes('\n');
+
+      return isBlock ? (
+        <div className="relative group/code my-3 rounded-xl overflow-hidden border border-[#333] bg-[#1e1e1e]">
+          <div className="flex items-center justify-between px-4 py-1.5 bg-[#2d2d2d] text-xs text-[#d4d4d4] font-mono border-b border-[#333]">
+            <span>{match?.[1] || 'code'}</span>
+            <button
+              onClick={() => handleCopyCode(codeContent)}
+              className="flex items-center gap-1 text-xs text-[#a3a3a3] hover:text-white transition-colors"
+            >
+              {copiedCode === codeContent ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy code</span>
+                </>
+              )}
+            </button>
+          </div>
+          <SyntaxHighlighter
+            style={vscDarkPlus as unknown as Record<string, React.CSSProperties>}
+            language={match?.[1] || 'text'}
+            PreTag="div"
+            className="p-4 text-xs font-mono !bg-[#1e1e1e] !m-0"
+          >
+            {codeContent}
+          </SyntaxHighlighter>
+        </div>
+      ) : (
+        <code className="bg-[#f3f4f6] text-[#1f2937] px-1.5 py-0.5 rounded text-sm font-mono border border-[#e5e7eb]" {...props}>
+          {children}
+        </code>
+      );
+    },
   };
 
   return (
@@ -40,16 +83,11 @@ export function ChatMessage({ message, isStreaming, onRegenerate, onDelete }: Ch
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={cn("w-full py-5 group transition-colors", isUser ? "bg-white" : "bg-white")}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="max-w-3xl mx-auto flex gap-4 px-4 relative">
         
         {/* Actions Toolbar */}
-        <div className={cn(
-          "absolute top-0 right-4 transition-opacity duration-200 z-10",
-          isHovered ? "opacity-100" : "opacity-0"
-        )}>
+        <div className="absolute top-0 right-4 z-10 opacity-100 transition-opacity duration-200 focus-within:opacity-100 md:opacity-0 md:group-hover:opacity-100">
           <MessageActions message={message} onRegenerate={onRegenerate} onDelete={onDelete} />
         </div>
 
@@ -88,51 +126,7 @@ export function ChatMessage({ message, isStreaming, onRegenerate, onDelete }: Ch
               ) : (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  components={{
-                    code({ node, className, children, ...props }: any) {
-                      const match = /language-(\w+)/.exec(className || '');
-                      const codeContent = String(children).replace(/\n$/, '');
-                      const isBlock = match || codeContent.includes('\n');
-                      const codeIdx = Math.random();
-
-                      return isBlock ? (
-                        <div className="relative group/code my-3 rounded-xl overflow-hidden border border-[#333] bg-[#1e1e1e]">
-                          <div className="flex items-center justify-between px-4 py-1.5 bg-[#2d2d2d] text-xs text-[#d4d4d4] font-mono border-b border-[#333]">
-                            <span>{match?.[1] || 'code'}</span>
-                            <button
-                              onClick={() => handleCopyCode(codeContent, codeIdx)}
-                              className="flex items-center gap-1 text-xs text-[#a3a3a3] hover:text-white transition-colors"
-                            >
-                              {copiedCodeIdx === codeIdx ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span className="text-emerald-400">Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  <span>Copy code</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                          <SyntaxHighlighter
-                            style={vscDarkPlus as any}
-                            language={match?.[1] || 'text'}
-                            PreTag="div"
-                            className="p-4 text-xs font-mono !bg-[#1e1e1e] !m-0"
-                            {...props}
-                          >
-                            {codeContent}
-                          </SyntaxHighlighter>
-                        </div>
-                      ) : (
-                        <code className="bg-[#f3f4f6] text-[#1f2937] px-1.5 py-0.5 rounded text-sm font-mono border border-[#e5e7eb]" {...props}>
-                          {children}
-                        </code>
-                      );
-                    }
-                  }}
+                  components={markdownComponents}
                 >
                   {message.content}
                 </ReactMarkdown>
@@ -142,21 +136,42 @@ export function ChatMessage({ message, isStreaming, onRegenerate, onDelete }: Ch
 
           {/* MAYA Hallucination & Fact Evidence Panel */}
           {!isUser && !isStreaming && (() => {
-            const hallucination = (message as any).hallucination;
-            const status = message.status || hallucination?.status || 'verified';
-            const confidence = message.confidence ?? hallucination?.confidence ?? 0.98;
-            const evidence = message.evidence || hallucination?.evidence || [];
+            const report = message.hallucination;
+            const status = report?.status ?? message.status ?? 'not_verified';
+            const confidence = report?.confidence ?? message.confidence;
+            const claims = report?.claims ?? message.claims ?? [];
+            const evidence = report?.evidence ?? message.evidence ?? [];
+            const reason = report?.reason ?? message.reason ??
+              'A verification report is not available for this answer. Treat it as unverified.';
 
             return (
-              <div className="w-full mt-3 pt-3 border-t border-[#f0f0f0] flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <HallucinationBadge status={status} confidence={confidence} showScore={true} />
+              <div className="w-full mt-3 pt-3 border-t border-[#f0f0f0] flex flex-col gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <HallucinationBadge status={status} showScore={false} />
                 </div>
-                {confidence !== undefined && (
-                  <ConfidenceBar confidence={confidence} />
+                <p className="text-xs text-[#676767] leading-relaxed">{reason}</p>
+                {typeof confidence === 'number' && Number.isFinite(confidence) && (
+                  <ConfidenceBar
+                    confidence={confidence}
+                    description="Uncalibrated evidence estimate; not a probability of truth."
+                  />
                 )}
-                {evidence && evidence.length > 0 && (
+                {claims.length > 0 ? claims.map((claim) => (
+                  <section key={claim.id} className="rounded-lg border border-[#e5e5e5] p-3">
+                    <div className="flex items-start gap-2">
+                      <HallucinationBadge status={claim.status} showScore={false} />
+                      <p className="text-sm text-[#20242a] leading-relaxed">{claim.text}</p>
+                    </div>
+                    {claim.evidence.length > 0 && (
+                      <EvidencePanel evidence={claim.evidence} />
+                    )}
+                  </section>
+                )) : evidence.length > 0 ? (
                   <EvidencePanel evidence={evidence} />
+                ) : report ? (
+                  <p className="text-xs text-[#8e8e8e]">No supporting passages were retrieved.</p>
+                ) : (
+                  <p className="text-xs text-[#8e8e8e]">This answer has not been verified.</p>
                 )}
               </div>
             );

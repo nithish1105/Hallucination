@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, RefreshCw, X, ArrowRight, Terminal } from 'lucide-react';
-import { authApi } from '@/lib/api';
-import { toast } from 'sonner';
+import { authApi, getApiErrorMessage } from '@/lib/api';
+import { toast } from '@/lib/safeToast';
 
 interface OtpModalProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ export function OtpModal({ isOpen, email, devOtp, onClose, onVerified }: OtpModa
 
   // Countdown timer
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (isOpen && countdown > 0) {
       timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
     }
@@ -33,17 +33,13 @@ export function OtpModal({ isOpen, email, devOtp, onClose, onVerified }: OtpModa
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setCountdown(60);
-      if (devOtp) {
-        // Auto-fill dev OTP
-        const digits = devOtp.split('');
-        setOtp(digits);
-        setTimeout(() => inputRefs.current[5]?.focus(), 100);
-      } else {
-        setOtp(['', '', '', '', '', '']);
-        setTimeout(() => inputRefs.current[0]?.focus(), 100);
-      }
+      const focusTimer = setTimeout(() => {
+        setOtp(devOtp ? devOtp.split('') : ['', '', '', '', '', '']);
+        inputRefs.current[devOtp ? 5 : 0]?.focus();
+      }, 100);
+      return () => clearTimeout(focusTimer);
     }
+    return undefined;
   }, [isOpen, devOtp]);
 
   const handleChange = (index: number, value: string) => {
@@ -79,8 +75,8 @@ export function OtpModal({ isOpen, email, devOtp, onClose, onVerified }: OtpModa
       await authApi.verifyOtp({ email, otp: code, purpose: 'signup' });
       toast.success('Email verified successfully!');
       onVerified();
-    } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Invalid or expired OTP code. Please try again.';
+    } catch (error: unknown) {
+      const msg = getApiErrorMessage(error, 'Invalid or expired OTP code. Please try again.');
       toast.error(msg);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
@@ -105,8 +101,8 @@ export function OtpModal({ isOpen, email, devOtp, onClose, onVerified }: OtpModa
         inputRefs.current[0]?.focus();
       }
       setCountdown(60);
-    } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Failed to resend verification code.';
+    } catch (error: unknown) {
+      const msg = getApiErrorMessage(error, 'Failed to resend verification code.');
       toast.error(msg);
     } finally {
       setIsResending(false);
@@ -194,7 +190,7 @@ export function OtpModal({ isOpen, email, devOtp, onClose, onVerified }: OtpModa
 
           {/* Resend */}
           <div className="flex items-center justify-between text-xs text-[#676767] pt-3 border-t border-[#f0f0f0]">
-            <span>Didn't receive code?</span>
+            <span>Didn&apos;t receive code?</span>
             <button
               onClick={handleResend}
               disabled={countdown > 0 || isResending}

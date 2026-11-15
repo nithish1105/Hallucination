@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, ShieldCheck } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { toast } from '@/lib/safeToast';
 import { useAuthStore } from '@/store/authStore';
-import { authApi } from '@/lib/api';
+import { authApi, getApiErrorMessage } from '@/lib/api';
 import { OtpModal } from '@/components/auth/OtpModal';
 
 export default function SignupPage() {
@@ -57,14 +56,8 @@ export default function SignupPage() {
         toast.success(`Verification code sent to ${formData.email.trim()}`);
       }
       setShowOtpModal(true);
-    } catch (err: any) {
-      let msg = 'Failed to send verification email. Please check details.';
-      const detail = err.response?.data?.detail;
-      if (typeof detail === 'string') {
-        msg = detail;
-      } else if (Array.isArray(detail) && detail.length > 0) {
-        msg = detail[0].msg || detail[0].reason || msg;
-      }
+    } catch (error: unknown) {
+      const msg = getApiErrorMessage(error, 'Failed to send verification email. Please check details.');
       toast.error(msg);
     } finally {
       setIsSendingOtp(false);
@@ -88,8 +81,8 @@ export default function SignupPage() {
         toast.success('Account created! Please sign in.');
         router.push('/auth/login');
       }
-    } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Failed to create account.';
+    } catch (error: unknown) {
+      const msg = getApiErrorMessage(error, 'Failed to create account.');
       toast.error(msg);
     }
   };

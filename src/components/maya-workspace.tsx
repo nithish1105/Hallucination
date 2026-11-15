@@ -31,6 +31,22 @@ type Message = {
   error?: string;
 };
 
+function errorText(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value)) {
+    const messages = value.map(errorText).filter((message): message is string => Boolean(message));
+    return messages.length ? messages.join(" · ") : null;
+  }
+  if (!value || typeof value !== "object") return null;
+
+  const record = value as Record<string, unknown>;
+  for (const key of ["msg", "message", "detail", "reason"]) {
+    const message = errorText(record[key]);
+    if (message) return message;
+  }
+  return null;
+}
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/${path}`, {
     ...init,
@@ -40,18 +56,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = data && typeof data === "object" && "detail" in data ? data.detail : null;
-    if (typeof detail === "string" && detail) throw new Error(detail);
-    if (Array.isArray(detail)) {
-      const messages = detail
-        .map((item) => {
-          if (typeof item === "string") return item;
-          if (item && typeof item === "object" && "msg" in item && typeof item.msg === "string") return item.msg;
-          return "";
-        })
-        .filter(Boolean);
-      if (messages.length) throw new Error(messages.join("; "));
-    }
-    throw new Error("The request could not be completed.");
+    throw new Error(errorText(detail) ?? "The request could not be completed.");
   }
   return data as T;
 }
@@ -371,7 +376,10 @@ export default function MayaWorkspace() {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        throw new Error(body?.detail ?? "MAYA could not answer this message.");
+        const detail = body && typeof body === "object" && "detail" in body
+          ? errorText(body.detail)
+          : null;
+        throw new Error(detail ?? "MAYA could not answer this message.");
       }
       if (!response.body) throw new Error("The server did not return a response stream.");
 
@@ -390,7 +398,7 @@ export default function MayaWorkspace() {
         } else if (event.type === "metadata") {
           setActiveChatId(event.chat_id);
         } else if (event.type === "error") {
-          streamError = event.message;
+          streamError = errorText(event.message) ?? "MAYA could not answer this message.";
         }
       };
 

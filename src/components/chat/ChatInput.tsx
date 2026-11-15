@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, Square, Paperclip, Mic } from 'lucide-react';
+import { ArrowUp, Square, Paperclip } from 'lucide-react';
 import { VoiceRecorder } from './VoiceRecorder';
 import { FileUploader } from './FileUploader';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
-  onSend: (message: string, files: File[]) => void;
+  onSend: (message: string, files: File[], useDocuments: boolean) => Promise<boolean> | boolean;
   isStreaming?: boolean;
   onStop?: () => void;
   disabled?: boolean;
@@ -16,6 +16,8 @@ interface ChatInputProps {
 export function ChatInput({ onSend, isStreaming, onStop, disabled }: ChatInputProps) {
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [useDocuments, setUseDocuments] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleInput = () => {
@@ -28,12 +30,19 @@ export function ChatInput({ onSend, isStreaming, onStop, disabled }: ChatInputPr
 
   useEffect(() => { handleInput(); }, [content]);
 
-  const handleSend = () => {
-    if ((!content.trim() && files.length === 0) || isStreaming) return;
-    onSend(content.trim(), files);
-    setContent('');
-    setFiles([]);
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+  const handleSend = async () => {
+    if ((!content.trim() && files.length === 0) || isStreaming || isSending) return;
+    setIsSending(true);
+    try {
+      const sent = await onSend(content.trim(), files, useDocuments);
+      if (!sent) return;
+      setContent('');
+      setFiles([]);
+      setUseDocuments(false);
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -69,13 +78,14 @@ export function ChatInput({ onSend, isStreaming, onStop, disabled }: ChatInputPr
             <input 
               type="file" 
               multiple 
+              accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.pptx,.png,.jpg,.jpeg"
               className="hidden" 
               onChange={(e) => {
                 if (e.target.files) {
                   setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
                 }
               }}
-              disabled={disabled || isStreaming}
+              disabled={disabled || isStreaming || isSending}
             />
           </label>
         </div>
@@ -88,7 +98,7 @@ export function ChatInput({ onSend, isStreaming, onStop, disabled }: ChatInputPr
           onKeyDown={handleKeyDown}
           placeholder="Ask MAYA anything..."
           className="w-full max-h-[200px] min-h-[44px] py-2.5 px-1 bg-transparent text-[#0d0d0d] placeholder:text-[#8e8e8e] resize-none focus:outline-none text-base leading-relaxed"
-          disabled={disabled}
+          disabled={disabled || isSending}
           rows={1}
         />
 
@@ -110,10 +120,10 @@ export function ChatInput({ onSend, isStreaming, onStop, disabled }: ChatInputPr
           ) : (
             <button
               onClick={handleSend}
-              disabled={!hasContent || disabled}
+              disabled={!hasContent || disabled || isSending}
               className={cn(
                 "p-2 rounded-full transition-all flex-shrink-0 flex items-center justify-center",
-                hasContent && !disabled
+                hasContent && !disabled && !isSending
                   ? "bg-[#0d0d0d] text-white hover:bg-[#262626] shadow-xs cursor-pointer"
                   : "bg-[#e5e5e5] text-[#a3a3a3] cursor-not-allowed"
               )}
@@ -123,6 +133,21 @@ export function ChatInput({ onSend, isStreaming, onStop, disabled }: ChatInputPr
             </button>
           )}
         </div>
+      </div>
+      <div className="px-4 pb-3 -mt-1">
+        <label className="inline-flex items-center gap-2 text-xs text-[#676767] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={useDocuments}
+            onChange={(event) => setUseDocuments(event.target.checked)}
+            disabled={disabled || isStreaming || isSending}
+            className="accent-[#10a37f]"
+          />
+          Use uploaded documents for this answer
+        </label>
+        <p className="ml-5 mt-1 text-[10px] text-[#8e8e8e] leading-relaxed">
+          When enabled, matching private document excerpts are sent to the configured AI provider for this answer.
+        </p>
       </div>
     </div>
   );
